@@ -1,0 +1,229 @@
+<Window x:Class="SpeechToText.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="pis.etc"
+        Width="800"
+        Height="650"
+        MinWidth="720"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="4,0,4,14">
+            <TextBlock Text="Your personal amanuensis"
+                       FontSize="25"
+                       FontWeight="SemiBold"
+                       Foreground="#232634" />
+            <TextBlock Text="Просто писец"
+                       Margin="0,5,0,0"
+                       Foreground="#6D7283" />
+        </StackPanel>
+
+        <TabControl Grid.Row="1"
+                    x:Name="SettingsTabs"
+                    Background="White"
+                    BorderBrush="#DDE0EA">
+            <TabItem Header="Общие">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="22">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Режим распознавания"
+                                       FontWeight="SemiBold" />
+                            <RadioButton x:Name="EconomyMode"
+                                         Content="₽ Экономичный — после записи"
+                                         Margin="0,10,0,5" />
+                            <RadioButton x:Name="FastMode"
+                                         Content="⚡ Быстрый — во время речи"
+                                         Margin="0,5,0,15" />
+
+                            <TextBlock Text="Микрофон"
+                                       FontWeight="SemiBold" />
+                            <ComboBox x:Name="MicrophoneBox"
+                                      DisplayMemberPath="Name" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="TestMicrophoneButton"
+                                        Content="Проверить 3 секунды"
+                                        Click="TestMicrophone_Click" />
+                                <ProgressBar x:Name="TestLevel"
+                                             Width="130"
+                                             Height="8"
+                                             Margin="8,0,0,0"
+                                             VerticalAlignment="Center"
+                                             Maximum="100" />
+                            </StackPanel>
+                            <TextBlock x:Name="MicrophoneStatus"
+                                       Margin="4,3,0,12"
+                                       Foreground="#6D7283"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="Язык"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Русский + English"
+                                       Margin="0,8,0,16"
+                                       Foreground="#50566A" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Горячие клавиши"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Диктовка (удерживать)"
+                                       Margin="0,9,0,0"
+                                       Foreground="#6D7283" />
+                            <ComboBox x:Name="RecordHotkeyBox">
+                                <ComboBoxItem Content="Левый Ctrl + Левый Alt"
+                                              Tag="LControl+LAlt" />
+                                <ComboBoxItem Content="Левый Ctrl + Левый Shift"
+                                              Tag="LControl+LShift" />
+                                <ComboBoxItem Content="Левый Alt + Левый Shift"
+                                              Tag="LAlt+LShift" />
+                            </ComboBox>
+                            <TextBlock Text="Переключение режима"
+                                       Foreground="#6D7283" />
+                            <ComboBox x:Name="ModeHotkeyBox">
+                                <ComboBoxItem Content="Левый Ctrl + Пробел"
+                                              Tag="LControl+Space" />
+                                <ComboBoxItem Content="Левый Alt + Пробел"
+                                              Tag="LAlt+Space" />
+                                <ComboBoxItem Content="Левый Shift + Пробел"
+                                              Tag="LShift+Space" />
+                            </ComboBox>
+
+                            <TextBlock Text="Поведение"
+                                       Margin="0,8,0,0"
+                                       FontWeight="SemiBold" />
+                            <CheckBox x:Name="DeepSeekEnabled"
+                                      Content="Исправлять текст через DeepSeek" />
+                            <CheckBox x:Name="OverlayEnabled"
+                                      Content="Показывать панель диктовки" />
+                            <CheckBox x:Name="PartialTextEnabled"
+                                      Content="Показывать частичный текст" />
+                            <CheckBox x:Name="SoundsEnabled"
+                                      Content="Звуки начала и окончания" />
+                            <CheckBox x:Name="AutoStartEnabled"
+                                      Content="Запускать вместе с Windows"
+                                      Margin="0,13,0,3" />
+                            <TextBlock x:Name="AutoStartStatusText"
+                                       Foreground="#6D7283"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="API-ключи">
+                <StackPanel Margin="24"
+                            MaxWidth="620"
+                            HorizontalAlignment="Left">
+                    <TextBlock Text="Ключи хранятся в Диспетчере учётных данных Windows и не записываются в настройки или журналы."
+                               TextWrapping="Wrap"
+                               Foreground="#50566A"
+                               Margin="0,0,0,18" />
+                    <TextBlock Text="OpenAI API key"
+                               FontWeight="SemiBold" />
+                    <PasswordBox x:Name="OpenAiKeyBox"
+                                 Padding="7"
+                                 Margin="0,5,0,15" />
+                    <TextBlock Text="DeepSeek API key"
+                               FontWeight="SemiBold" />
+                    <PasswordBox x:Name="DeepSeekKeyBox"
+                                 Padding="7"
+                                 Margin="0,5,0,15" />
+                    <TextBlock Text="Программа не выполняет проверку API автоматически при запуске Windows."
+                               TextWrapping="Wrap"
+                               Foreground="#6D7283" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Словарь">
+                <Grid Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="По одному имени или термину на строку. Регистр будет передан моделям как подсказка."
+                               TextWrapping="Wrap"
+                               Foreground="#50566A"
+                               Margin="0,0,0,10" />
+                    <TextBox x:Name="VocabularyBox"
+                             Grid.Row="1"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             TextWrapping="Wrap"
+                             FontFamily="Segoe UI"
+                             FontSize="14" />
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="История и статистика">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="StatisticsText"
+                               Margin="4,2,4,12"
+                               FontWeight="SemiBold"
+                               Foreground="#3E4558" />
+                    <DataGrid x:Name="HistoryGrid"
+                              Grid.Row="1"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Время"
+                                                Binding="{Binding LocalTime}"
+                                                Width="130" />
+                            <DataGridTextColumn Header="Режим"
+                                                Binding="{Binding Mode}"
+                                                Width="100" />
+                            <DataGridTextColumn Header="Текст"
+                                                Binding="{Binding Text}"
+                                                Width="*" />
+                            <DataGridTextColumn Header="Статус"
+                                                Binding="{Binding Status}"
+                                                Width="130" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Grid.Row="2"
+                            Content="Очистить историю"
+                            HorizontalAlignment="Right"
+                            Click="ClearHistory_Click" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,14,0,0">
+            <Button x:Name="SaveButton"
+                    Content="Сохранить"
+                    Background="{StaticResource AccentBrush}"
+                    Foreground="White"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    Click="Save_Click" />
+            <Button Content="Закрыть"
+                    Click="Close_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

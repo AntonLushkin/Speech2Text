@@ -1,0 +1,83 @@
+<Window x:Class="SpeechToText.App.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Диктовка"
+        Width="410"
+        Height="118"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Focusable="False">
+    <Border x:Name="PanelBorder"
+            Background="#F21B1D25"
+            BorderBrush="#4BFFFFFF"
+            BorderThickness="1"
+            CornerRadius="18"
+            Padding="17">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="44" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="62" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.RowSpan="2"
+                    Width="34"
+                    Height="34"
+                    CornerRadius="17"
+                    Background="#365B7CFA"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
+                <TextBlock x:Name="IconText"
+                           Text="●"
+                           Foreground="#FF6B6B"
+                           FontSize="19"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Border>
+
+            <TextBlock x:Name="StatusText"
+                       Grid.Column="1"
+                       Text="Готово"
+                       Foreground="White"
+                       FontWeight="SemiBold"
+                       FontSize="16" />
+            <TextBlock x:Name="TimerText"
+                       Grid.Column="2"
+                       Text="00:00"
+                       Foreground="#D8FFFFFF"
+                       FontFamily="Consolas"
+                       FontSize="15"
+                       HorizontalAlignment="Right" />
+            <TextBlock x:Name="DetailText"
+                       Grid.Row="1"
+                       Grid.Column="1"
+                       Grid.ColumnSpan="2"
+                       Text="₽ Экономичный режим"
+                       Foreground="#AFFFFFFF"
+                       FontSize="12"
+                       TextTrimming="CharacterEllipsis" />
+            <ProgressBar x:Name="LevelBar"
+                         Grid.Row="2"
+                         Grid.Column="1"
+                         Grid.ColumnSpan="2"
+                         Height="5"
+                         Margin="0,11,0,0"
+                         Minimum="0"
+                         Maximum="100"
+                         Value="0"
+                         Foreground="#6FE1A1"
+                         Background="#32FFFFFF"
+                         BorderThickness="0" />
+        </Grid>
+    </Border>
+</Window>
