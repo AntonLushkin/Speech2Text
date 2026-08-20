@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Stop"
 
+$version = "1.1.1"
 $projectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $solutionPath = Join-Path $projectRoot "SpeechToText.sln"
 $msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
@@ -26,7 +27,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $artifactsRoot = [System.IO.Path]::GetFullPath((Join-Path $projectRoot "artifacts"))
-$stagePath = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "pis.etc-win10-x64-v1.1.0"))
+$stagePath = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "pis.etc-win10-x64-v$version"))
 if (-not $stagePath.StartsWith($artifactsRoot + [System.IO.Path]::DirectorySeparatorChar,
         [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Unsafe release directory path."
@@ -58,7 +59,7 @@ New-Item -ItemType Directory -Path $stageDocsPath | Out-Null
     Copy-Item -LiteralPath (Join-Path $projectRoot "docs\$_") -Destination $stageDocsPath
 }
 
-$zipPath = Join-Path $artifactsRoot "pis.etc-win10-x64-v1.1.0.zip"
+$zipPath = Join-Path $artifactsRoot "pis.etc-win10-x64-v$version.zip"
 Compress-Archive -Path (Join-Path $stagePath "*") -DestinationPath $zipPath -Force
 
 Write-Host "Ready: $zipPath"
