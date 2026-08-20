@@ -63,6 +63,8 @@ namespace SpeechToText.App
                     _history,
                     _overlay,
                     _tray);
+                _workflow.FastModeUnavailable += (sender, args) =>
+                    SetMode(RecognitionMode.Economy);
 
                 WireEvents();
                 _keyboard.Start();

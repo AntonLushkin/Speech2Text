@@ -63,6 +63,8 @@ namespace SpeechToText.App
 
         public WorkflowState State => _state.State;
 
+        public event EventHandler FastModeUnavailable;
+
         public void UpdateSettings(AppSettings settings)
         {
             _settings = settings;
@@ -158,6 +160,8 @@ namespace SpeechToText.App
                     SettingsWindow.OpenAiCredentialName);
 
                 TranscriptionResult transcript = null;
+                Exception realtimeFailure = null;
+                var usedFallback = false;
                 if (_activeMode == RecognitionMode.Fast && _realtime != null)
                 {
                     try
@@ -173,6 +177,9 @@ namespace SpeechToText.App
                     catch (Exception exception) when (
                         !(exception is OperationCanceledException))
                     {
+                        realtimeFailure = exception;
+                        usedFallback = true;
+                        FastModeUnavailable?.Invoke(this, EventArgs.Empty);
                         if (_settings.ShowOverlay)
                         {
                             _overlay.ShowState(
@@ -184,15 +191,27 @@ namespace SpeechToText.App
 
                 if (transcript == null)
                 {
-                    transcript = await _batchProvider.TranscribeAsync(
-                        new TranscriptionRequest
-                        {
-                            Recording = recording,
-                            Language = _settings.Language,
-                            Vocabulary = _settings.Vocabulary
-                        },
-                        openAiKey,
-                        _operation.Token).ConfigureAwait(true);
+                    try
+                    {
+                        transcript = await _batchProvider.TranscribeAsync(
+                            new TranscriptionRequest
+                            {
+                                Recording = recording,
+                                Language = _settings.Language,
+                                Vocabulary = _settings.Vocabulary
+                            },
+                            openAiKey,
+                            _operation.Token).ConfigureAwait(true);
+                    }
+                    catch (Exception batchFailure) when (
+                        realtimeFailure != null &&
+                        !(batchFailure is OperationCanceledException))
+                    {
+                        throw new InvalidOperationException(
+                            "Быстрый режим: " + UserMessage(realtimeFailure) +
+                            " Резервный режим: " + UserMessage(batchFailure),
+                            batchFailure);
+                    }
                 }
 
                 var rawText = TextCommandFormatter.Apply(transcript.Text);
@@ -267,7 +286,7 @@ namespace SpeechToText.App
                     AudioSeconds = recording.Duration.TotalSeconds,
                     TotalLatencyMilliseconds = _totalTime.Elapsed.TotalMilliseconds,
                     EstimatedCostUsd = transcript.EstimatedCostUsd,
-                    Status = insert.Inserted ? "Вставлено" : "В буфере"
+                    Status = HistoryStatus(insert.Inserted, usedFallback)
                 });
 
                 _state.Transition(WorkflowState.Completed);
@@ -624,6 +643,12 @@ namespace SpeechToText.App
             return mode == RecognitionMode.Fast
                 ? "⚡ Быстрый режим"
                 : "₽ Экономичный режим";
+        }
+
+        private static string HistoryStatus(bool inserted, bool usedFallback)
+        {
+            var status = inserted ? "Вставлено" : "В буфере";
+            return usedFallback ? status + " (резерв)" : status;
         }
 
         private static string UserMessage(Exception exception)

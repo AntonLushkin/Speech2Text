@@ -263,6 +263,7 @@ namespace SpeechToText.App
                 }
                 else if (completion != null && !completion.Task.IsCompleted)
                 {
+                    FlushResamplers();
                     completion.TrySetResult(new AudioRecording
                     {
                         Wav16Khz = CreateWaveFile(_pcm16.ToArray(), 16000),
@@ -274,6 +275,28 @@ namespace SpeechToText.App
 
                 CleanupCapture();
             }
+        }
+
+        private void FlushResamplers()
+        {
+            if (_capture == null || _buffer16 == null || _buffer24 == null)
+            {
+                return;
+            }
+
+            // WDL keeps a small tail while resampling. A short block of silence
+            // releases that tail so very short dictations still produce a valid
+            // WAV for the emergency batch fallback.
+            var format = _capture.WaveFormat;
+            var byteCount = Math.Max(
+                format.BlockAlign,
+                format.AverageBytesPerSecond / 10);
+            byteCount -= byteCount % format.BlockAlign;
+            var silence = new byte[byteCount];
+            _buffer16.AddSamples(silence, 0, silence.Length);
+            _buffer24.AddSamples(silence, 0, silence.Length);
+            Drain16Khz();
+            Drain24Khz();
         }
 
         private void PreparePipelines(WaveFormat sourceFormat)

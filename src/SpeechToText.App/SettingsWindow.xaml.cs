@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shell;
 using SpeechToText.Core;
 
 namespace SpeechToText.App
@@ -40,6 +41,7 @@ namespace SpeechToText.App
             InitializeComponent();
             _economyWindowIcon = LoadWindowIcon("tray-economy.ico");
             _fastWindowIcon = LoadWindowIcon("tray-fast.ico");
+            TaskbarItemInfo = new TaskbarItemInfo();
             _settingsStore = settingsStore;
             _credentialStore = credentialStore;
             _autoStart = autoStart;
@@ -98,9 +100,13 @@ namespace SpeechToText.App
 
         public void SetModeIcon(RecognitionMode mode)
         {
-            Icon = mode == RecognitionMode.Fast
+            var modeIcon = mode == RecognitionMode.Fast
                 ? _fastWindowIcon
                 : _economyWindowIcon;
+            Icon = modeIcon;
+            TaskbarItemInfo.Overlay = modeIcon;
+            EconomyMode.IsChecked = mode == RecognitionMode.Economy;
+            FastMode.IsChecked = mode == RecognitionMode.Fast;
         }
 
         public void AllowClose()
