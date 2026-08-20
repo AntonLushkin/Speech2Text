@@ -30,7 +30,7 @@ API-ключи для сборки и автоматических тестов 
 Итоговый архив:
 
 ```text
-artifacts\pis.etc-win10-x64-v1.1.0.zip
+artifacts\pis.etc-win10-x64-v1.1.1.zip
 ```
 
 ## Сборка в Visual Studio
