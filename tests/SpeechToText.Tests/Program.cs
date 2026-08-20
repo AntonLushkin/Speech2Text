@@ -40,6 +40,7 @@ namespace SpeechToText.Tests
             TestHotkeyParsing();
             TestAutoStartCommand();
             TestWaveContainer();
+            TestRealtimeConfiguration();
             TestTrayIconsEmbedded();
             TestNativeInputLayout();
             await TestBatchTranscriptionAndRetry();
@@ -185,6 +186,25 @@ namespace SpeechToText.Tests
             Assert(BitConverter.ToInt32(wave, 24) == 16000,
                 "wave sample rate");
             Assert(wave.Length == 48, "wave payload size");
+            Assert(!OpenAiBatchTranscriptionProvider.IsSupportedWave(wave),
+                "too-short wave rejected before API call");
+
+            var validWave = NAudioCaptureService.CreateWaveFile(
+                new byte[3200],
+                16000);
+            Assert(OpenAiBatchTranscriptionProvider.IsSupportedWave(validWave),
+                "16 kHz mono PCM wave accepted");
+        }
+
+        private static void TestRealtimeConfiguration()
+        {
+            Assert(OpenAiRealtimeTranscriptionSession.Model ==
+                   "gpt-live-transcribe", "current realtime transcription model");
+            Assert(OpenAiRealtimeTranscriptionSession.Endpoint.Query ==
+                   "?intent=transcription", "dedicated transcription session endpoint");
+            Assert(OpenAiRealtimeTranscriptionSession.BuildLanguages("ru")
+                    .SequenceEqual(new[] { "ru", "en" }),
+                "realtime Russian and English language hints");
         }
 
         private static void TestTrayIconsEmbedded()
@@ -240,7 +260,9 @@ namespace SpeechToText.Tests
                 {
                     Recording = new AudioRecording
                     {
-                        Wav16Khz = new byte[] { 1, 2, 3 },
+                        Wav16Khz = NAudioCaptureService.CreateWaveFile(
+                            new byte[3200],
+                            16000),
                         Duration = TimeSpan.FromSeconds(4)
                     },
                     Language = "ru",
