@@ -22,8 +22,10 @@ namespace SpeechToText.Core
     public sealed class OpenAiRealtimeTranscriptionSession :
         IRealtimeTranscriptionSession
     {
-        private static readonly Uri Endpoint = new Uri(
-            "wss://api.openai.com/v1/realtime?model=gpt-realtime-whisper");
+        internal const string Model = "gpt-live-transcribe";
+
+        internal static readonly Uri Endpoint = new Uri(
+            "wss://api.openai.com/v1/realtime?intent=transcription");
 
         private readonly string _apiKey;
         private readonly string _language;
@@ -37,6 +39,8 @@ namespace SpeechToText.Core
         private readonly StringBuilder _transcript = new StringBuilder();
         private readonly TaskCompletionSource<string> _finalTranscript =
             new TaskCompletionSource<string>();
+        private readonly TaskCompletionSource<bool> _sessionReady =
+            new TaskCompletionSource<bool>();
         private readonly Stopwatch _stopwatch = new Stopwatch();
 
         private Task _sendLoop;
@@ -83,6 +87,7 @@ namespace SpeechToText.Core
 
             _started = true;
             _stopwatch.Start();
+            _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token));
 
             await SendJsonAsync(
                 new Dictionary<string, object>
@@ -102,8 +107,8 @@ namespace SpeechToText.Core
                                 },
                                 ["transcription"] = new Dictionary<string, object>
                                 {
-                                    ["model"] = "gpt-realtime-whisper",
-                                    ["language"] = _language,
+                                    ["model"] = Model,
+                                    ["languages"] = BuildLanguages(_language),
                                     ["delay"] = "low"
                                 },
                                 ["turn_detection"] = null
@@ -113,8 +118,18 @@ namespace SpeechToText.Core
                 },
                 cancellationToken).ConfigureAwait(false);
 
+            using (var sessionTimeout =
+                CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken,
+                    _lifetime.Token))
+            {
+                sessionTimeout.CancelAfter(TimeSpan.FromSeconds(5));
+                await WaitWithCancellationAsync(
+                    _sessionReady.Task,
+                    sessionTimeout.Token).ConfigureAwait(false);
+            }
+
             _sendLoop = Task.Run(() => SendAudioLoopAsync(_lifetime.Token));
-            _receiveLoop = Task.Run(() => ReceiveLoopAsync(_lifetime.Token));
         }
 
         public void QueueAudio(byte[] pcm24Khz)
@@ -249,8 +264,11 @@ namespace SpeechToText.Core
                             {
                                 _finalTranscript.TrySetException(
                                     new InvalidOperationException(
-                                        "Realtime-соединение было закрыто."));
+                                         "Realtime-соединение было закрыто."));
                             }
+                            _sessionReady.TrySetException(
+                                new InvalidOperationException(
+                                    "Realtime-соединение было закрыто до подтверждения сессии."));
                             return;
                         }
 
@@ -273,11 +291,13 @@ namespace SpeechToText.Core
                 if (!_lifetime.IsCancellationRequested)
                 {
                     _finalTranscript.TrySetCanceled();
+                    _sessionReady.TrySetCanceled();
                 }
             }
             catch (Exception exception)
             {
                 _finalTranscript.TrySetException(exception);
+                _sessionReady.TrySetException(exception);
             }
         }
 
@@ -300,6 +320,12 @@ namespace SpeechToText.Core
             }
 
             var type = typeValue as string;
+            if (type == "session.updated")
+            {
+                _sessionReady.TrySetResult(true);
+                return;
+            }
+
             if (type == "conversation.item.input_audio_transcription.delta")
             {
                 object deltaValue;
@@ -333,9 +359,27 @@ namespace SpeechToText.Core
 
             if (type == "error")
             {
+                var exception = new InvalidOperationException(ExtractError(payload));
+                _sessionReady.TrySetException(exception);
+                _finalTranscript.TrySetException(exception);
+                return;
+            }
+
+            if (type == "conversation.item.input_audio_transcription.failed")
+            {
                 _finalTranscript.TrySetException(
                     new InvalidOperationException(ExtractError(payload)));
             }
+        }
+
+        internal static string[] BuildLanguages(string primaryLanguage)
+        {
+            var primary = string.IsNullOrWhiteSpace(primaryLanguage)
+                ? "ru"
+                : primaryLanguage.Trim().ToLowerInvariant();
+            return string.Equals(primary, "en", StringComparison.OrdinalIgnoreCase)
+                ? new[] { "en" }
+                : new[] { primary, "en" };
         }
 
         private async Task SendJsonAsync(
@@ -377,6 +421,13 @@ namespace SpeechToText.Core
             var error = payload.TryGetValue("error", out errorValue)
                 ? errorValue as Dictionary<string, object>
                 : null;
+
+            if (error == null &&
+                payload.TryGetValue("error", out errorValue))
+            {
+                return "OpenAI Realtime: " + Convert.ToString(errorValue);
+            }
+
             object messageValue;
             return error != null &&
                    error.TryGetValue("message", out messageValue)

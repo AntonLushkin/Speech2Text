@@ -34,6 +34,13 @@ namespace SpeechToText.Core
                 throw new ArgumentException("В записи нет звука.", nameof(request));
             }
 
+            if (!IsSupportedWave(request.Recording.Wav16Khz))
+            {
+                throw new InvalidOperationException(
+                    "Резервная запись не содержит пригодного аудио. " +
+                    "Попробуйте удерживать клавиши чуть дольше и проверьте микрофон.");
+            }
+
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 throw new InvalidOperationException("Не задан API-ключ OpenAI.");
@@ -200,6 +207,31 @@ namespace SpeechToText.Core
             // Approximate model price. The value is deliberately isolated here so
             // it can be updated without touching usage history or the UI.
             return Math.Round((decimal)duration.TotalMinutes * 0.003m, 6);
+        }
+
+        internal static bool IsSupportedWave(byte[] wave)
+        {
+            const int headerSize = 44;
+            const int minimumPcmBytes = 1600;
+            if (wave == null || wave.Length < headerSize + minimumPcmBytes)
+            {
+                return false;
+            }
+
+            return wave[0] == (byte)'R' &&
+                   wave[1] == (byte)'I' &&
+                   wave[2] == (byte)'F' &&
+                   wave[3] == (byte)'F' &&
+                   wave[8] == (byte)'W' &&
+                   wave[9] == (byte)'A' &&
+                   wave[10] == (byte)'V' &&
+                   wave[11] == (byte)'E' &&
+                   BitConverter.ToInt16(wave, 20) == 1 &&
+                   BitConverter.ToInt16(wave, 22) == 1 &&
+                   BitConverter.ToInt32(wave, 24) == 16000 &&
+                   BitConverter.ToInt16(wave, 34) == 16 &&
+                   BitConverter.ToInt32(wave, 40) >= minimumPcmBytes &&
+                   BitConverter.ToInt32(wave, 40) <= wave.Length - headerSize;
         }
     }
 
